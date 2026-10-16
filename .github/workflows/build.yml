@@ -1,13 +1,15 @@
 name: Build Android APK
 
-on: [push]
+on:
+  push:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout Repository
       uses: actions/checkout@v3
 
     - name: Set up JDK 17
@@ -16,24 +18,20 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Set up Android SDK
+    - name: Setup Android SDK
       uses: android-actions/setup-android@v2
 
-    - name: Grant execute permission for gradlew
+    - name: Create Gradle Wrapper
       run: |
-        android/gradlew wrapper || true
-        # 만약 gradle 파일이 없다면 간단한 빌드 스크립트로 대체
-    
-    - name: Build APK with Free Compiler
-      uses: reactivecircus/android-emulator-runner@v2
-      with:
-        api-level: 29
-        script: echo "Building..."
+        gradle wrapper
 
-    # 깃허브 클라우드가 안드로이드 무료 툴킷을 이용해 APK를 굽는 과정입니다.
-    - name: Build Debug APK using Gradle
+    - name: Build Debug APK
       run: |
-        sdkmanager "platforms;android-33" "build-tools;33.0.2"
-        yes | sdkmanager --licenses
-        # 표준 안드로이드 빌드 명령 실행
-        ./gradlew assembleDebug || gradle assembleDebug || true
+        chmod +x gradlew
+        ./gradlew assembleDebug
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-debug
+        path: app/build/outputs/apk/debug/app-debug.apk
